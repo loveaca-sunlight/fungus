@@ -104,9 +104,7 @@ namespace Fungus.EditorUtils
             {
                 DestroyImmediate(activeBlockEditor);
                 activeBlockEditor = Editor.CreateEditor(block, typeof(BlockEditor)) as BlockEditor;
-            }
-
-            UpdateWindowHeight();
+            }        
 
             float width = EditorGUIUtility.currentViewWidth;
 
@@ -216,6 +214,11 @@ namespace Fungus.EditorUtils
                 }
             }
 
+            if (resize)
+            {
+                UpdateWindowHeight();
+            }
+
             if (resize && Event.current.type == EventType.Repaint)
             {
                 Undo.RecordObject(flowchart, "Resize view");
@@ -255,8 +258,8 @@ namespace Fungus.EditorUtils
             {
                 // Make sure block view is always clamped to visible area
                 float height = flowchart.BlockViewHeight;
-                height = Mathf.Max(200, height);
-                height = Mathf.Min(windowHeight - 200,height);
+                height = Mathf.Max(windowHeight / 8, height);
+                height = Mathf.Min(windowHeight - windowHeight / 8,height);
                 flowchart.BlockViewHeight = height;
             }
             
