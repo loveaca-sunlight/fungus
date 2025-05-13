@@ -946,6 +946,11 @@ namespace Fungus
             }
         }
 
+        public virtual void SetTextAdapter(GameObject go)
+        {
+            textAdapter.InitFromGameObject(go);
+        }
+
         /// <summary>
         /// Writes text using a typewriter effect to a UI text object.
         /// </summary>

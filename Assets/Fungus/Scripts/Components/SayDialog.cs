@@ -10,6 +10,16 @@ using System.Collections.Generic;
 namespace Fungus
 {
     /// <summary>
+    /// A single line of dialog
+    /// </summary>
+    [Serializable]
+    public class DialogLine
+    {
+        [SerializeField] public string name;
+        [SerializeField] public string text;
+    }
+
+    /// <summary>
     /// Display story text in a visual novel style dialog box.
     /// </summary>
     public class SayDialog : MonoBehaviour
@@ -20,56 +30,21 @@ namespace Fungus
         [Tooltip("The continue button UI object")]
         [SerializeField] protected Button continueButton;
 
-        [Tooltip("The canvas UI object")]
-        [SerializeField] protected Canvas dialogCanvas;
-
-        [Tooltip("The name text UI object")]
-        [SerializeField] protected Text nameText;
-        [Tooltip("TextAdapter will search for appropriate output on this GameObject if nameText is null")]
-        [SerializeField] protected GameObject nameTextGO;
-        protected TextAdapter nameTextAdapter = new TextAdapter();
-        public virtual string NameText
-        {
-            get
-            {
-                return nameTextAdapter.Text;
-            }
-            set
-            {
-                nameTextAdapter.Text = value;
-            }
-        }
-
-        [Tooltip("The story text UI object")]
-        [SerializeField] protected Text storyText;
-        [Tooltip("TextAdapter will search for appropriate output on this GameObject if storyText is null")]
-        [SerializeField] protected GameObject storyTextGO;
-        protected TextAdapter storyTextAdapter = new TextAdapter();
-        public virtual string StoryText
-        {
-            get
-            {
-                return storyTextAdapter.Text;
-            }
-            set
-            {
-                storyTextAdapter.Text = value;
-            }
-        }
-        public virtual RectTransform StoryTextRectTrans
-        {
-            get
-            {
-                return storyText != null ? storyText.rectTransform : storyTextGO.GetComponent<RectTransform>();
-            }
-        }
+        // [Tooltip("The canvas UI object")]
+        // [SerializeField] protected Canvas dialogCanvas;
 
         [Tooltip("The character UI object")]
         [SerializeField] protected Image characterImage;
         public virtual Image CharacterImage { get { return characterImage; } }
+
+        [Tooltip("Text Item Parent GameObject")]
+        [SerializeField] protected GameObject textHolder;
+
+        [Tooltip("Text Item Prefab")]
+        [SerializeField] protected TextItem textItemPrefab;
     
-        [Tooltip("Adjust width of story text when Character Image is displayed (to avoid overlapping)")]
-        [SerializeField] protected bool fitTextWithImage = true;
+        // [Tooltip("Adjust width of story text when Character Image is displayed (to avoid overlapping)")]
+        // [SerializeField] protected bool fitTextWithImage = true;
 
         [Tooltip("Close any other open Say Dialogs when this one is active")]
         [SerializeField] protected bool closeOtherDialogs;
@@ -90,10 +65,33 @@ namespace Fungus
         // Most recent speaking character
         protected static Character speakingCharacter;
 
-        protected StringSubstituter stringSubstituter = new StringSubstituter();
-
 		// Cache active Say Dialogs to avoid expensive scene search
 		protected static List<SayDialog> activeSayDialogs = new List<SayDialog>();
+
+        protected TextItem curText;
+        protected List<TextItem> dialogList = new List<TextItem>();
+
+        protected int curTextIndex = 0;
+
+        public virtual string NameText
+        {
+            get
+            {
+                return curText.NameText;
+            }
+        }
+
+        public virtual string StoryText
+        {
+            get
+            {
+                return curText.StoryText;
+            }
+            set
+            {
+                curText.StoryText = value;
+            }
+        }
 
 		protected virtual void Awake()
 		{
@@ -101,14 +99,12 @@ namespace Fungus
 			{
 				activeSayDialogs.Add(this);
 			}
-
-            nameTextAdapter.InitFromGameObject(nameText != null ? nameText.gameObject : nameTextGO);
-            storyTextAdapter.InitFromGameObject(storyText != null ? storyText.gameObject : storyTextGO);
         }
 
 		protected virtual void OnDestroy()
 		{
 			activeSayDialogs.Remove(this);
+            dialogList.Clear();
 		}
 			
 		protected virtual Writer GetWriter()
@@ -174,11 +170,6 @@ namespace Fungus
             // It's possible that SetCharacterImage() has already been called from the
             // Start method of another component, so check that no image has been set yet.
             // Same for nameText.
-
-            if (NameText == "")
-            {
-                SetCharacterName("", Color.white);
-            }
             if (currentCharacterImage == null)
             {                
                 // Character image is hidden by default.
@@ -231,11 +222,6 @@ namespace Fungus
                     gameObject.SetActive(false);
                 }
             }
-        }
-
-        protected virtual void ClearStoryText()
-        {
-            StoryText = "";
         }
 
         #region Public members
@@ -333,10 +319,6 @@ namespace Fungus
                 {
                     characterImage.gameObject.SetActive(false);
                 }
-                if (NameText != null)
-                {
-                    NameText = "";
-                }
                 speakingCharacter = null;
             }
             else
@@ -369,16 +351,6 @@ namespace Fungus
                         }
                     }
                 }
-
-                string characterName = character.NameText;
-
-                if (characterName == "")
-                {
-                    // Use game object name as default
-                    characterName = character.GetObjectName();
-                }
-                    
-                SetCharacterName(characterName, character.NameColor);
             }
         }
 
@@ -398,57 +370,43 @@ namespace Fungus
                 characterImage.gameObject.SetActive(true);
                 currentCharacterImage = image;
             }
-            else
-            {
-                characterImage.gameObject.SetActive(false);
+            // else
+            // {
+            //     characterImage.gameObject.SetActive(false);
 
-                if (startStoryTextWidth != 0)
-                {
-                    StoryTextRectTrans.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, 
-                        startStoryTextInset, 
-                        startStoryTextWidth);
-                }
-            }
+            //     if (startStoryTextWidth != 0)
+            //     {
+            //         StoryTextRectTrans.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, 
+            //             startStoryTextInset, 
+            //             startStoryTextWidth);
+            //     }
+            // }
 
-            // Adjust story text box to not overlap image rect
-            if (fitTextWithImage && 
-                StoryText != null &&
-                characterImage.gameObject.activeSelf)
-            {
-                if (Mathf.Approximately(startStoryTextWidth, 0f))
-                {
-                    startStoryTextWidth = StoryTextRectTrans.rect.width;
-                    startStoryTextInset = StoryTextRectTrans.offsetMin.x; 
-                }
+            // // Adjust story text box to not overlap image rect
+            // if (fitTextWithImage && 
+            //     StoryText != null &&
+            //     characterImage.gameObject.activeSelf)
+            // {
+            //     if (Mathf.Approximately(startStoryTextWidth, 0f))
+            //     {
+            //         startStoryTextWidth = StoryTextRectTrans.rect.width;
+            //         startStoryTextInset = StoryTextRectTrans.offsetMin.x; 
+            //     }
 
-                // Clamp story text to left or right depending on relative position of the character image
-                if (StoryTextRectTrans.position.x < characterImage.rectTransform.position.x)
-                {
-                    StoryTextRectTrans.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, 
-                        startStoryTextInset, 
-                        startStoryTextWidth - characterImage.rectTransform.rect.width);
-                }
-                else
-                {
-                    StoryTextRectTrans.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Right, 
-                        startStoryTextInset, 
-                        startStoryTextWidth - characterImage.rectTransform.rect.width);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sets the character name to display on the Say Dialog.
-        /// Supports variable substitution e.g. John {$surname}
-        /// </summary>
-        public virtual void SetCharacterName(string name, Color color)
-        {
-            if (NameText != null)
-            {
-                var subbedName = stringSubstituter.SubstituteStrings(name);
-                NameText = subbedName;
-                nameTextAdapter.SetTextColor(color);
-            }
+            //     // Clamp story text to left or right depending on relative position of the character image
+            //     if (StoryTextRectTrans.position.x < characterImage.rectTransform.position.x)
+            //     {
+            //         StoryTextRectTrans.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, 
+            //             startStoryTextInset, 
+            //             startStoryTextWidth - characterImage.rectTransform.rect.width);
+            //     }
+            //     else
+            //     {
+            //         StoryTextRectTrans.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Right, 
+            //             startStoryTextInset, 
+            //             startStoryTextWidth - characterImage.rectTransform.rect.width);
+            //     }
+            // }
         }
 
         /// <summary>
@@ -489,6 +447,17 @@ namespace Fungus
                 }
             }
 
+            if (curText != null)
+            {
+                curText.SetContentSizeFilter();
+            }
+
+            curText = Instantiate(textItemPrefab, textHolder.transform, false);
+            curText.SetCharacterName(speakingCharacter.NameText, speakingCharacter.NameColor);
+            curText.StoryText = text;
+            dialogList.Add(curText);
+            writer.SetTextAdapter(curText.gameObject);
+
             if (closeOtherDialogs)
             {
                 for (int i = 0; i < activeSayDialogs.Count; i++)
@@ -519,7 +488,7 @@ namespace Fungus
 
             writer.AttachedWriterAudio = writerAudio;
 
-            yield return StartCoroutine(writer.Write(text, clearPrevious, waitForInput, stopVoiceover, waitForVO, soundEffectClip, onComplete));
+            yield return StartCoroutine(writer.Write(curText.Text, clearPrevious, waitForInput, stopVoiceover, waitForVO, soundEffectClip, onComplete));
         }
 
         /// <summary>
@@ -541,8 +510,6 @@ namespace Fungus
         /// </summary>
         public virtual void Clear()
         {
-            ClearStoryText();
-
             // Kill any active write coroutine
             StopAllCoroutines();
         }
