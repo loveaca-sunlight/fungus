@@ -107,6 +107,10 @@ namespace Fungus.EditorUtils
             }        
 
             float width = EditorGUIUtility.currentViewWidth;
+            if (windowHeight == 0)
+            {
+                UpdateWindowHeight();
+            }
 
             blockScrollPos = GUILayout.BeginScrollView(blockScrollPos, GUILayout.Height(flowchart.BlockViewHeight));
             activeBlockEditor.DrawBlockName(flowchart);
