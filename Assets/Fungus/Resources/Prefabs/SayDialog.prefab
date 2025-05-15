@@ -139,6 +139,7 @@ MonoBehaviour:
   textHolder: {fileID: 7789379754044732168}
   textItemPrefab: {fileID: 4725122550128016231, guid: 3cb98aa4081f62247b7709510ace9625,
     type: 3}
+  textScrollbar: {fileID: 186906865446204477}
   closeOtherDialogs: 0
 --- !u!114 &11487070
 MonoBehaviour:
@@ -515,7 +516,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 9071639241363423844}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

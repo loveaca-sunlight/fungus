@@ -42,6 +42,9 @@ namespace Fungus
 
         [Tooltip("Text Item Prefab")]
         [SerializeField] protected TextItem textItemPrefab;
+
+        [Tooltip("The Text ScrollRect")]
+        [SerializeField] protected ScrollRect textScrollbar;
     
         // [Tooltip("Adjust width of story text when Character Image is displayed (to avoid overlapping)")]
         // [SerializeField] protected bool fitTextWithImage = true;
@@ -454,6 +457,7 @@ namespace Fungus
 
             curText = Instantiate(textItemPrefab, textHolder.transform, false);
             curText.SetCharacterName(speakingCharacter.NameText, speakingCharacter.NameColor);
+            textScrollbar.verticalScrollbar.value = 0;
             curText.StoryText = text;
             dialogList.Add(curText);
             writer.SetTextAdapter(curText.gameObject);
