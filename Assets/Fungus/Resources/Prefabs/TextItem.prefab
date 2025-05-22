@@ -38,7 +38,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 386.5863}
+  m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4877768279613756384
 CanvasRenderer:
@@ -164,5 +164,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a27c3cfece673945a5d857c3e5834cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nameTextGO: {fileID: 0}
-  storyTextGO: {fileID: 1358667208442803681}
+  myContentSizeFitter: {fileID: 111580678071533673}
+  textObject: {fileID: 1358667208442803681}

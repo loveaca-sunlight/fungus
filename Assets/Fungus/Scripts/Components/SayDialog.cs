@@ -6,6 +6,8 @@ using UnityEngine.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
+using MoonSharp.Interpreter;
 
 namespace Fungus
 {
@@ -43,6 +45,9 @@ namespace Fungus
         [Tooltip("Text Item Prefab")]
         [SerializeField] protected TextItem textItemPrefab;
 
+        [Tooltip("Text Button Item Prefab")]
+        [SerializeField] protected ButtonItem textButtonItemPrefab;
+
         [Tooltip("The Text ScrollRect")]
         [SerializeField] protected ScrollRect textScrollbar;
     
@@ -72,7 +77,8 @@ namespace Fungus
 		protected static List<SayDialog> activeSayDialogs = new List<SayDialog>();
 
         protected TextItem curText;
-        protected List<TextItem> dialogList = new List<TextItem>();
+        protected List<ButtonItem> buttonList = new List<ButtonItem>();
+        protected List<AbstractTextItem> dialogList = new List<AbstractTextItem>();
 
         protected int curTextIndex = 0;
 
@@ -450,16 +456,9 @@ namespace Fungus
                 }
             }
 
-            if (curText != null)
-            {
-                curText.SetContentSizeFilter();
-            }
+            CreateTextItem();
 
-            curText = Instantiate(textItemPrefab, textHolder.transform, false);
-            curText.SetCharacterName(speakingCharacter.NameText, speakingCharacter.NameColor);
-            textScrollbar.verticalScrollbar.value = 0;
             curText.StoryText = text;
-            dialogList.Add(curText);
             writer.SetTextAdapter(curText.gameObject);
 
             if (closeOtherDialogs)
@@ -495,10 +494,95 @@ namespace Fungus
             yield return StartCoroutine(writer.Write(curText.Text, clearPrevious, waitForInput, stopVoiceover, waitForVO, soundEffectClip, onComplete));
         }
 
+        #region Option
+
+        /// <summary>
+        /// Adds the option to the list of displayed options. Calls a Block when selected.
+        /// </summary>
+        /// <returns><c>true</c>, if the option was added successfully.</returns>
+        /// <param name="text">The option text to display on the button.</param>
+        /// <param name="interactable">If false, the option is displayed but is not selectable.</param>
+        /// <param name="hideOption">If true, the option is not displayed but the menu knows that option can or did exist</param>
+        /// <param name="targetBlock">Block to execute when the option is selected.</param>
+        public virtual void AddOption(string text, bool interactable, bool hideOption, Block targetBlock)
+        {
+            var block = targetBlock;
+            UnityEngine.Events.UnityAction action = delegate
+            {
+                EventSystem.current.SetSelectedGameObject(null); // 作用未知 之后测试
+                StopAllCoroutines();
+                ClearButtonList(text);
+
+                if (block != null)
+                {
+                    var flowchart = block.GetFlowchart();
+                    //gameObject.SetActive(false);
+                    // Use a coroutine to call the block on the next frame
+                    // Have to use the Flowchart gameobject as the MenuDialog is now inactive
+                    flowchart.StartCoroutine(CallBlock(block));
+                }
+            };
+
+            var tmpButtonItem = CreateButtonItem();
+            tmpButtonItem.SetButton(text, interactable, hideOption, action);
+        }
+
+        /// <summary>
+        /// 新建TextItem, 前一个TextItem开启自适应高度，将滑动条拉至底部
+        /// </summary>
+        protected virtual void CreateTextItem()
+        {
+            if (curText != null)
+            {
+                curText.SetContentSizeFilter(true);
+            }
+            curText = Instantiate(textItemPrefab, textHolder.transform, false);
+            if (speakingCharacter != null)
+            {
+                curText.SetCharacterName(speakingCharacter.NameText, speakingCharacter.NameColor);
+            }
+            
+            textScrollbar.verticalScrollbar.value = 0;
+            dialogList.Add(curText);
+        }
+
+        /// <summary>
+        /// 新建ButtonItem, 前一个TextItem开启自适应高度,添加进待选列表内
+        /// </summary>
+        protected virtual ButtonItem CreateButtonItem()
+        {
+            if (curText != null && buttonList.Count == 0)
+            {
+                curText.SetContentSizeFilter(true);
+            }
+            var tmpButtonItem = Instantiate(textButtonItemPrefab, textHolder.transform, false);
+            buttonList.Add(tmpButtonItem);
+            return tmpButtonItem;
+        }
+
+        protected virtual void ClearButtonList(string choosenButtonText)
+        {
+            for (int i = 0; i < buttonList.Count; i++)
+            {
+                Destroy(buttonList[i].gameObject);
+            }
+            CreateTextItem();
+            curText.ShowTextDerictly(choosenButtonText);
+            buttonList.Clear();
+        }
+
+        protected IEnumerator CallBlock(Block block)
+        {
+            yield return new WaitForEndOfFrame();
+            block.StartExecution();
+        }
+
+        #endregion
+
         /// <summary>
         /// Tell the Say Dialog to fade out once writing and player input have finished.
         /// </summary>
-        public virtual bool FadeWhenDone { get {return fadeWhenDone; } set { fadeWhenDone = value; } }
+        public virtual bool FadeWhenDone { get { return fadeWhenDone; } set { fadeWhenDone = value; } }
 
         /// <summary>
         /// Stop the Say Dialog while its writing text.
