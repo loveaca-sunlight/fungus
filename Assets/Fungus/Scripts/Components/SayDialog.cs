@@ -61,7 +61,7 @@ namespace Fungus
         protected float startStoryTextInset;
 
         protected WriterAudio writerAudio;
-        protected Writer writer;
+        protected ScrollWriter writer;
         protected CanvasGroup canvasGroup;
 
         protected bool fadeWhenDone = true;
@@ -116,17 +116,17 @@ namespace Fungus
             dialogList.Clear();
 		}
 			
-		protected virtual Writer GetWriter()
+		protected virtual ScrollWriter GetWriter()
         {
             if (writer != null)
             {
                 return writer;
             }
 
-            writer = GetComponent<Writer>();
+            writer = GetComponent<ScrollWriter>();
             if (writer == null)
             {
-                writer = gameObject.AddComponent<Writer>();
+                writer = gameObject.AddComponent<ScrollWriter>();
             }
 
             return writer;
@@ -491,7 +491,42 @@ namespace Fungus
 
             writer.AttachedWriterAudio = writerAudio;
 
-            yield return StartCoroutine(writer.Write(curText.Text, clearPrevious, waitForInput, stopVoiceover, waitForVO, soundEffectClip, onComplete));
+            yield return StartCoroutine(writer.Write(curText, clearPrevious, stopVoiceover, soundEffectClip, onComplete));
+        }
+
+        public virtual void SayDerictly(string text, bool clearPrevious, bool waitForInput, bool fadeWhenDone, bool stopVoiceover, bool waitForVO, AudioClip voiceOverClip, Action onComplete)
+        {
+            CreateTextItem();
+
+            curText.StoryText = text;
+            curText.ShowTextDerictly(curText.Text);
+
+            if (closeOtherDialogs)
+            {
+                for (int i = 0; i < activeSayDialogs.Count; i++)
+                {
+                    var sd = activeSayDialogs[i];
+                    if (sd.gameObject != gameObject)
+                    {
+                        sd.SetActive(false);
+                    }
+                }
+            }
+            gameObject.SetActive(true);
+
+            this.fadeWhenDone = fadeWhenDone;
+
+            //Audio To do
+            // AudioClip soundEffectClip = null;
+            // if (voiceOverClip != null)
+            // {
+            //     WriterAudio writerAudio = GetWriterAudio();
+            //     writerAudio.OnVoiceover(voiceOverClip);
+            // }
+            // else if (speakingCharacter != null)
+            // {
+            //     soundEffectClip = speakingCharacter.SoundEffect;
+            // }
         }
 
         #region Option
@@ -532,17 +567,17 @@ namespace Fungus
         /// </summary>
         protected virtual void CreateTextItem()
         {
-            if (curText != null)
-            {
-                curText.SetContentSizeFilter(true);
-            }
+            // if (curText != null)
+            // {
+            //     curText.SetContentSizeFilter(true);
+            // }
             curText = Instantiate(textItemPrefab, textHolder.transform, false);
             if (speakingCharacter != null)
             {
                 curText.SetCharacterName(speakingCharacter.NameText, speakingCharacter.NameColor);
             }
             
-            textScrollbar.verticalScrollbar.value = 0;
+            //textScrollbar.verticalScrollbar.value = 0;
             dialogList.Add(curText);
         }
 

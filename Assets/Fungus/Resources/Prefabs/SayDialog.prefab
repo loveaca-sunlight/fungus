@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 22588896}
   - component: {fileID: 11486804}
   - component: {fileID: 11488894}
+  - component: {fileID: 2982260060952371358}
   - component: {fileID: 11487070}
   - component: {fileID: 11404316}
   - component: {fileID: 11481894}
@@ -143,7 +144,7 @@ MonoBehaviour:
     type: 3}
   textScrollbar: {fileID: 186906865446204477}
   closeOtherDialogs: 0
---- !u!114 &11487070
+--- !u!114 &2982260060952371358
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -151,6 +152,30 @@ MonoBehaviour:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 188902}
   m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01e6e024a7fb80f438ac07389e5d4988, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetTextObject: {fileID: 0}
+  punchObject: {fileID: 6671815081987747880}
+  writingSpeed: 60
+  punctuationPause: 0.25
+  hiddenTextColor: {r: 1, g: 1, b: 1, a: 0}
+  writeWholeWords: 0
+  forceRichText: 1
+  instantComplete: 1
+  doReadAheadText: 1
+  scrollObject: {fileID: 6120184837549428579}
+  moveDuration: 0.5
+  showTextDerictly: 1
+--- !u!114 &11487070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 188902}
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a676940fce6344af1a70043b089a6c14, type: 3}
   m_Name: 
@@ -518,7 +543,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 9071639241363423844}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
