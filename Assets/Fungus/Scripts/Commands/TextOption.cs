@@ -59,7 +59,14 @@ namespace Fungus
                 var flowchart = GetFlowchart();
                 string displayText = flowchart.SubstituteVariables(text);
 
-                sayDialog.AddOption(displayText, interactable, hideOption, targetBlock);
+                // 检查是否是最后一个选项，若是的话触发滑动。
+                bool isLastOption = false;
+                if (ParentBlock.CommandList.Count <= CommandIndex + 1 || ParentBlock.CommandList[CommandIndex + 1].GetType() != typeof(TextOption))
+                {
+                    isLastOption = true;
+                }
+
+                sayDialog.AddOption(displayText, interactable, hideOption, isLastOption, targetBlock);
             }
             
             Continue();

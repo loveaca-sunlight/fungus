@@ -19,13 +19,29 @@ namespace Fungus
     public class ScrollWriter : Writer
     {
         [Tooltip("滑动条物体")]
-        [SerializeField] protected Transform scrollObject;
+        [SerializeField] protected RectTransform scrollObject;
+
+        [Tooltip("用于控制文字出现初期的滑动")]
+        [SerializeField] protected RectTransform viewPort;
 
         [Tooltip("滑动时间")]
         [SerializeField] protected float moveDuration = 0.5f;
 
         [Tooltip("直接显示完整文本，不进行跳字")]
         [SerializeField] protected bool showTextDerictly = true;
+
+        private float viewPortMaxHeight;
+        private float viewPortCurHeight;
+
+        private float spaceHeight = 10f;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            viewPortMaxHeight = viewPort.rect.height;
+            viewPort.offsetMax = new Vector2(0f, -viewPortMaxHeight);
+            viewPortCurHeight = 0;
+        }
 
         public IEnumerator Write(TextItem item, bool clear, bool stopAudio, AudioClip audioClip, Action onComplete)
         {
@@ -47,6 +63,20 @@ namespace Fungus
             yield return StartCoroutine(ProcessScroll(item, stopAudio, onComplete));
         }
 
+        public IEnumerator AddOptions(List<ButtonItem> options, Action onComplete = null)
+        {
+            yield return null;
+            float height = 0f;
+            foreach (var option in options)
+            {
+                if (option.transform is RectTransform optionRect)
+                {
+                    height += optionRect.rect.height + spaceHeight;
+                }
+            }
+            yield return StartCoroutine(DoScrollMove(height));
+        }
+
         public virtual IEnumerator ProcessScroll(TextItem item, bool stopAudio, Action onComplete)
         {
             isWriting = true;
@@ -54,10 +84,11 @@ namespace Fungus
             textAdapter.Text = item.Text;
             yield return null;
             item.SetContentSizeFilter(true);
+            yield return null;
             float height = 0f;
             if (item.transform is RectTransform itemRect)
             {
-                height = itemRect.rect.height;
+                height = itemRect.rect.height + spaceHeight;
             }
 
             yield return StartCoroutine(DoScrollMove(height));
@@ -78,22 +109,45 @@ namespace Fungus
         protected virtual IEnumerator DoScrollMove(float moveHeight)
         {
             float elapsedTime = 0f;
+            float elapsedTime2 = 0f;
+
+            viewPortCurHeight += moveHeight;
+
+            Vector2 startSize = viewPort.offsetMax;
+            Vector2 endSize = startSize + new Vector2(0f, moveHeight);
             Vector3 startPos = scrollObject.localPosition;
             Vector3 upPos = scrollObject.localPosition + new Vector3(0f, moveHeight, 0f);
-
-            while (elapsedTime < moveDuration)
+            float viewPortDuration = moveDuration;
+            float scrollDuration = moveDuration;
+            // 触发viewPort和Scroll同时滑动的情况
+            if (viewPort.rect.height < viewPortMaxHeight && startSize.y + moveHeight > 0f)
             {
-                // 插值计算新位置
-                scrollObject.localPosition = Vector3.Lerp(startPos, upPos, elapsedTime / moveDuration);
-
-                // 增加已经经过的时间
-                elapsedTime += Time.deltaTime;
-
-                yield return null;
+                endSize = new Vector2(0f, 0f);
+                upPos = new Vector3(0f, moveHeight + startSize.y, 0f);
+                viewPortDuration = moveDuration * (-startSize.y / moveHeight);
+                scrollDuration -= viewPortDuration;
             }
 
+            while (elapsedTime + elapsedTime2 < moveDuration)
+            {
+                if (viewPort.rect.height < viewPortMaxHeight)
+                {
+                    viewPort.offsetMax = Vector2.Lerp(startSize, endSize, elapsedTime / viewPortDuration);
+                    elapsedTime += Time.deltaTime;
+
+                    yield return null;
+                }
+                else
+                {
+                    scrollObject.localPosition = Vector3.Lerp(startPos, upPos, elapsedTime2 / scrollDuration);
+                    elapsedTime2 += Time.deltaTime;
+
+                    yield return null;
+                }
+            }
             // 确保最终位置准确
-            scrollObject.localPosition = upPos;
+            // viewPort.offsetMax = endSize;
+            // scrollObject.localPosition = upPos;
         }
     }
 }

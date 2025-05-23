@@ -539,7 +539,7 @@ namespace Fungus
         /// <param name="interactable">If false, the option is displayed but is not selectable.</param>
         /// <param name="hideOption">If true, the option is not displayed but the menu knows that option can or did exist</param>
         /// <param name="targetBlock">Block to execute when the option is selected.</param>
-        public virtual void AddOption(string text, bool interactable, bool hideOption, Block targetBlock)
+        public virtual void AddOption(string text, bool interactable, bool hideOption, bool isLastOption, Block targetBlock)
         {
             var block = targetBlock;
             UnityEngine.Events.UnityAction action = delegate
@@ -560,6 +560,11 @@ namespace Fungus
 
             var tmpButtonItem = CreateButtonItem();
             tmpButtonItem.SetButton(text, interactable, hideOption, action);
+
+            if (isLastOption)
+            {
+                StartCoroutine(writer.AddOptions(buttonList));
+            }
         }
 
         /// <summary>
@@ -567,10 +572,6 @@ namespace Fungus
         /// </summary>
         protected virtual void CreateTextItem()
         {
-            // if (curText != null)
-            // {
-            //     curText.SetContentSizeFilter(true);
-            // }
             curText = Instantiate(textItemPrefab, textHolder.transform, false);
             if (speakingCharacter != null)
             {
@@ -586,10 +587,6 @@ namespace Fungus
         /// </summary>
         protected virtual ButtonItem CreateButtonItem()
         {
-            if (curText != null && buttonList.Count == 0)
-            {
-                curText.SetContentSizeFilter(true);
-            }
             var tmpButtonItem = Instantiate(textButtonItemPrefab, textHolder.transform, false);
             buttonList.Add(tmpButtonItem);
             return tmpButtonItem;
@@ -597,12 +594,13 @@ namespace Fungus
 
         protected virtual void ClearButtonList(string choosenButtonText)
         {
-            for (int i = 0; i < buttonList.Count; i++)
-            {
-                Destroy(buttonList[i].gameObject);
-            }
-            CreateTextItem();
-            curText.ShowTextDerictly(choosenButtonText);
+            // for (int i = 0; i < buttonList.Count; i++)
+            // {
+            //     Destroy(buttonList[i].gameObject);
+            // }
+            // CreateTextItem();
+            // curText.ShowTextDerictly(choosenButtonText);
+            // curText.SetContentSizeFilter(true);
             buttonList.Clear();
         }
 
